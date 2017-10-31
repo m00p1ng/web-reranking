@@ -1,5 +1,5 @@
-HTML_SRC="$HOME/Desktop/ir_proj/html"
-DESC="$HOME/Desktop"
+HTML_SRC="$HOME/Documents/ir_proj/html"
+DESC="$HOME/Documents"
 RESULT="$DESC/urlmap.txt"
 
 pat=$(echo $HTML_SRC | sed -e 's/[]\/$*.^|[]/\\&/g')
