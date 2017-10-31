@@ -4,6 +4,4 @@ RESULT="$DESC/urlmap.txt"
 
 pat=$(echo $HTML_SRC | sed -e 's/[]\/$*.^|[]/\\&/g')
 
-find $HTML_SRC -type f |\
-sed -e "s/^$pat\///g" |\
-sort > $RESULT
+find $HTML_SRC -type f | sed -e "s/^$pat\///g" | sort > $RESULT
