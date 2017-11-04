@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	webgraph.GetGraph(rootPath, tags)
+	webgraph.GetGraph(htmlPath, tags)
 }

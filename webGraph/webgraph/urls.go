@@ -6,18 +6,15 @@ import (
 	"strings"
 )
 
-// URL -- url
-type URL string
-
 // URLList -- list of URL
-type URLList []URL
+type URLList []string
 
-func splitRootURL(p string, rp string) string {
-	return strings.Replace(p, regexp.QuoteMeta(rp+"/"), "", -1)
+func splitRootURL(path string, rootPath string) string {
+	return strings.Replace(path, regexp.QuoteMeta(rootPath+"/"), "", -1)
 }
 
-func urlmap(p string, rp string) URL {
-	var url = URL(splitRootURL(p, rp))
+func urlmap(path string, rootPath string) string {
+	var url = splitRootURL(path, rootPath)
 	return url
 }
 
@@ -30,9 +27,8 @@ func Urlmap(rp string) URLList {
 	})
 	return urls
 }
-
-func (u URLList) print() {
-	for _, url := range u {
-		fmt.Println(url)
+func (ul URLList) print() {
+	for _, u := range ul {
+		fmt.Println(u)
 	}
 }

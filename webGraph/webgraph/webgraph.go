@@ -17,7 +17,13 @@ type Tag struct {
 	Attribute string
 }
 
-func extractURL(p string, rp string, t []Tag) {
+// WebGraph --
+type WebGraph struct {
+	URLmap URLList
+	OutURL [][]int
+}
+
+func extractURLFromFile(p string, t []Tag) URLList {
 	file, err := os.Open(p)
 	var urlOut URLList
 
@@ -30,8 +36,17 @@ func extractURL(p string, rp string, t []Tag) {
 	}
 	defer file.Close()
 
-	// urlOut.print()
-	// fmt.Println(len(urlOut))
+	return urlOut
+}
+
+func getOutLinkURL(rp string, t []Tag) {
+	pathTraverse(rp, func(curpath string) {
+		curURL := splitRootURL(curpath, rp)
+		fmt.Println("CURPATH => ", curURL)
+		urlOut := extractURLFromFile(curpath, t)
+		urlOut.print()
+		fmt.Println()
+	})
 }
 
 func parseHTML(ct io.Reader, t []Tag) URLList {
@@ -50,9 +65,6 @@ func parseHTML(ct io.Reader, t []Tag) URLList {
 			if url != "" {
 				urlOut = append(urlOut, url)
 			}
-			fmt.Println(token.Attr)
-		case html.SelfClosingTagToken:
-			fmt.Println(token)
 		}
 	}
 	return urlOut
@@ -68,19 +80,19 @@ func extractRedirectLink(ct io.Reader) URLList {
 	for scanner.Scan() {
 		g := re.FindAllStringSubmatch(scanner.Text(), 1)
 		for i := 0; i < len(g); i++ {
-			urlRedirect = append(urlRedirect, URL(g[i][1]))
+			urlRedirect = append(urlRedirect, g[i][1])
 		}
 	}
 	return urlRedirect
 }
 
-func extractTagWithAttribute(tk html.Token, t []Tag) URL {
+func extractTagWithAttribute(tk html.Token, t []Tag) string {
 	for _, tag := range t {
 		isExpectTag := tk.Data == tag.Name
 		if isExpectTag {
 			for _, attr := range tk.Attr {
 				if attr.Key == tag.Attribute {
-					return URL(attr.Val)
+					return attr.Val
 				}
 			}
 		}
@@ -93,6 +105,4 @@ func GetGraph(rp string, t []Tag) {
 	log.Println("Mapping URL...")
 	Urlmap(rp)
 	log.Println("URL mapped")
-
-	// extractURL(p, rp, t)
 }
