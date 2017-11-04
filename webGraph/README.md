@@ -12,8 +12,17 @@ $ go run main.go settings.go
 
 or 
 
+$ make run
+```
+
+## How to build
+```
 $ go bulid -o webgraph.out main.go settings.go 
 $ ./webgraph.out
+
+or 
+
+$ make build
 ```
 
 ## URLMAP

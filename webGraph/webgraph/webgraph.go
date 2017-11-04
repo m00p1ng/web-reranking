@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
+	"net/url"
 	"os"
 	"regexp"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -27,14 +28,14 @@ func extractURLFromFile(p string, t []Tag) URLList {
 	file, err := os.Open(p)
 	var urlOut URLList
 
-	if err == nil {
-		urlOut = parseHTML(file, t)
-		urlRedirect := extractRedirectLink(file)
-		urlOut = append(urlOut, urlRedirect...)
-	} else {
+	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
+
+	urlOut = parseHTML(file, t)
+	urlRedirect := extractRedirectLink(file)
+	urlOut = append(urlOut, urlRedirect...)
 
 	return urlOut
 }
@@ -44,6 +45,19 @@ func getOutLinkURL(rp string, t []Tag) {
 		curURL := splitRootURL(curpath, rp)
 		fmt.Println("CURPATH => ", curURL)
 		urlOut := extractURLFromFile(curpath, t)
+		for i, u := range urlOut {
+			uParse, err := url.Parse(u)
+
+			if err != nil {
+				panic(err)
+			}
+
+			if uParse.IsAbs() {
+				urlOut[i] = removeHTTPPrefix(u)
+			} else {
+				urlOut[i] = strings.TrimRight(u, "/")
+			}
+		}
 		urlOut.print()
 		fmt.Println()
 	})
@@ -62,7 +76,7 @@ func parseHTML(ct io.Reader, t []Tag) URLList {
 		switch tokenType {
 		case html.StartTagToken:
 			url := extractTagWithAttribute(token, t)
-			if url != "" {
+			if url != "" && !urlOut.include(url) {
 				urlOut = append(urlOut, url)
 			}
 		}
@@ -78,9 +92,9 @@ func extractRedirectLink(ct io.Reader) URLList {
 
 	var urlRedirect URLList
 	for scanner.Scan() {
-		g := re.FindAllStringSubmatch(scanner.Text(), 1)
-		for i := 0; i < len(g); i++ {
-			urlRedirect = append(urlRedirect, g[i][1])
+		g := re.FindStringSubmatch(scanner.Text())
+		if len(g) > 0 {
+			urlRedirect = append(urlRedirect, g[1])
 		}
 	}
 	return urlRedirect
@@ -101,8 +115,5 @@ func extractTagWithAttribute(tk html.Token, t []Tag) string {
 }
 
 // GetGraph -- get webgraph
-func GetGraph(rp string, t []Tag) {
-	log.Println("Mapping URL...")
-	Urlmap(rp)
-	log.Println("URL mapped")
+func GetGraph(urlMap URLList, t []Tag) {
 }
