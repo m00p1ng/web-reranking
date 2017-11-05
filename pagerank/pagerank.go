@@ -23,12 +23,12 @@ func Compute(wg [][]int) []float64 {
 	for {
 		t++
 		r1 = mulMatrix(vecA, r0)
-
 		dist := distance(r0, r1)
-		if dist > epsilon {
+		log.Printf("Round %d (err = %.6f)", t, dist)
+
+		if dist < epsilon {
 			break
 		}
-		log.Printf("Round %d (dist = %.20f)", t, dist)
 		r0 = r1
 	}
 	log.Println("Finished")
