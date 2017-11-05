@@ -63,7 +63,6 @@ func removeHTTPPrefix(url string) string {
 }
 
 func joinURL(curPath string, relPath string) string {
-	// fmt.Printf("curPath = '%s', relPath = '%s'\n", curPath, relPath)
 	if string(relPath[0]) != "/" {
 		base := path.Dir(curPath)
 		fullPath := path.Join(base, relPath)
@@ -78,4 +77,22 @@ func joinURL(curPath string, relPath string) string {
 	fullPath := path.Join(cur.Host, relPath)
 
 	return fullPath
+}
+
+func pathResolve(u string, curPath string) (string, error) {
+	uParse, err := url.Parse(u)
+
+	if err != nil {
+		return "", err
+	}
+
+	if uParse.IsAbs() {
+		return removeHTTPPrefix(u), nil
+	}
+
+	if u != "/" {
+		u = strings.TrimRight(u, "/")
+	}
+
+	return joinURL(curPath, u), nil
 }

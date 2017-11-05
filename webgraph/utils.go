@@ -3,6 +3,7 @@ package webgraph
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 func isDirectory(p string) (bool, error) {
@@ -28,4 +29,12 @@ func pathTraverse(p string, h func(string)) {
 			h(curpath)
 		}
 	}
+}
+
+func parseStringToInt(s []string) []int {
+	result := make([]int, len(s))
+	for i := range s {
+		result[i], _ = strconv.Atoi(s[i])
+	}
+	return result
 }

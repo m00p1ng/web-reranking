@@ -5,35 +5,41 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
+	"./pagerank"
 	"./webgraph"
 )
 
 func main() {
-	wg := webgraph.GetGraph(htmlPath, tags)
+	_, wg := webgraph.GetGraph(htmlPath, tags)
+	pr := pagerank.Compute(wg)
 
-	writeFile("urlmap.txt", func(file io.Writer) {
-		for _, url := range wg.URLmap {
-			fmt.Fprintf(file, "%s\n", url)
+	writeFile("page_score.txt", func(file io.Writer) {
+		for _, score := range pr {
+			fmt.Fprintf(file, "%.20f\n", score)
 		}
 	})
 
-	writeFile("webgraph.txt", func(file io.Writer) {
-		for _, out := range wg.OutURL {
-			if len(out) == 0 {
-				fmt.Fprintf(file, "-\n")
-			} else {
-				result := ""
-				for _, it := range out {
-					result += "," + strconv.Itoa(it)
-				}
-				result = strings.Trim(result, ",")
-				fmt.Fprintf(file, "%s\n", result)
-			}
-		}
-	})
+	// writeFile("urlmap.txt", func(file io.Writer) {
+	// 	for _, url := range urlmap {
+	// 		fmt.Fprintf(file, "%s\n", url)
+	// 	}
+	// })
+
+	// writeFile("webgraph.txt", func(file io.Writer) {
+	// 	for _, out := range wg {
+	// 		if len(out) == 0 {
+	// 			fmt.Fprintf(file, "-\n")
+	// 		} else {
+	// 			result := ""
+	// 			for _, it := range out {
+	// 				result += "," + strconv.Itoa(it)
+	// 			}
+	// 			result = strings.Trim(result, ",")
+	// 			fmt.Fprintf(file, "%s\n", result)
+	// 		}
+	// 	}
+	// })
 }
 
 func writeFile(fn string, h func(io.Writer)) {

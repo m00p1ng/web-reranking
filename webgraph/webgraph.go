@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"log"
-	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -20,15 +19,12 @@ type Tag struct {
 }
 
 // WebGraph --
-type WebGraph struct {
-	URLmap URLList
-	OutURL [][]int
-}
+type WebGraph [][]int
 
 func extractURLFromFile(path string, t []Tag) URLList {
-	file, err := os.Open(path)
 	var urlOut URLList
 
+	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
@@ -53,24 +49,6 @@ func getOutLinkURL(htmlPath string, url string, tag []Tag) URLList {
 		}
 	}
 	return urlOut
-}
-
-func pathResolve(u string, curPath string) (string, error) {
-	uParse, err := url.Parse(u)
-
-	if err != nil {
-		return "", err
-	}
-
-	if uParse.IsAbs() {
-		return removeHTTPPrefix(u), nil
-	}
-
-	if u != "/" {
-		u = strings.TrimRight(u, "/")
-	}
-
-	return joinURL(curPath, u), nil
 }
 
 func parseHTML(content io.Reader, t []Tag) URLList {
@@ -125,27 +103,46 @@ func extractTagWithAttribute(token html.Token, t []Tag) string {
 }
 
 // GetGraph -- get webgraph
-func GetGraph(path string, t []Tag) WebGraph {
+func GetGraph(path string, t []Tag) (URLList, WebGraph) {
 	urlMap := Urlmap(path)
+	wg := make(WebGraph, len(urlMap))
 
 	log.Println("Creating Webgraph...")
-	wg := WebGraph{
-		URLmap: urlMap,
-		OutURL: make([][]int, len(urlMap)),
-	}
-
-	for i, um := range wg.URLmap {
+	for i, um := range urlMap {
 		urlOut := getOutLinkURL(path, um, t)
 
 		for _, uo := range urlOut {
-			idx := wg.URLmap.Find(uo)
+			idx := urlMap.Find(uo)
 
 			if idx != -1 {
-				wg.OutURL[i] = append(wg.OutURL[i], idx+1)
+				wg[i] = append(wg[i], idx+1)
 			}
 		}
 	}
 	log.Println("Webgraph created")
 
+	return urlMap, wg
+}
+
+func ReadGraph(p string) WebGraph {
+	var wg WebGraph
+
+	file, err := os.Open(p)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "-" {
+			wg = append(wg, make([]int, 0))
+		} else {
+			num := strings.Split(line, ",")
+			wg = append(wg, parseStringToInt(num))
+		}
+	}
 	return wg
 }
