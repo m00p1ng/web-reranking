@@ -5,19 +5,35 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"./webgraph"
 )
 
 func main() {
-	urlMap := webgraph.Urlmap(htmlPath)
+	wg := webgraph.GetGraph(htmlPath, tags)
+
 	writeFile("urlmap.txt", func(file io.Writer) {
-		for _, url := range urlMap {
+		for _, url := range wg.URLmap {
 			fmt.Fprintf(file, "%s\n", url)
 		}
 	})
 
-	webgraph.GetGraph(urlMap, tags)
+	writeFile("webgraph.txt", func(file io.Writer) {
+		for _, out := range wg.OutURL {
+			if len(out) == 0 {
+				fmt.Fprintf(file, "-\n")
+			} else {
+				result := ""
+				for _, it := range out {
+					result += "," + strconv.Itoa(it)
+				}
+				result = strings.Trim(result, ",")
+				fmt.Fprintf(file, "%s\n", result)
+			}
+		}
+	})
 }
 
 func writeFile(fn string, h func(io.Writer)) {
@@ -38,9 +54,9 @@ func writeFile(fn string, h func(io.Writer)) {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
 	h(file)
-	file.Close()
 }
 
 func isNotExist(path string) bool {

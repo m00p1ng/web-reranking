@@ -3,6 +3,8 @@ package webgraph
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -33,19 +35,21 @@ func Urlmap(rp string) URLList {
 	return urls
 }
 
-func (ul URLList) print() {
+// Print -- Print URLs
+func (ul URLList) Print() {
 	for _, u := range ul {
 		fmt.Println(u)
 	}
 }
 
-func (ul URLList) include(url string) bool {
-	for _, u := range ul {
+// Find -- Find URL and return index that found, is not return -1
+func (ul URLList) Find(url string) int {
+	for i, u := range ul {
 		if u == url {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
 func removeHTTPPrefix(url string) string {
@@ -59,7 +63,19 @@ func removeHTTPPrefix(url string) string {
 }
 
 func joinURL(curPath string, relPath string) string {
-	fullPath := ""
+	// fmt.Printf("curPath = '%s', relPath = '%s'\n", curPath, relPath)
+	if string(relPath[0]) != "/" {
+		base := path.Dir(curPath)
+		fullPath := path.Join(base, relPath)
+		return fullPath
+	}
+
+	cur, err := url.Parse("http://" + curPath)
+
+	if err != nil {
+		panic(err)
+	}
+	fullPath := path.Join(cur.Host, relPath)
 
 	return fullPath
 }

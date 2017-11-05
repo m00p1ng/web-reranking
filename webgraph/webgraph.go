@@ -2,10 +2,11 @@ package webgraph
 
 import (
 	"bufio"
-	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 
@@ -24,8 +25,8 @@ type WebGraph struct {
 	OutURL [][]int
 }
 
-func extractURLFromFile(p string, t []Tag) URLList {
-	file, err := os.Open(p)
+func extractURLFromFile(path string, t []Tag) URLList {
+	file, err := os.Open(path)
 	var urlOut URLList
 
 	if err != nil {
@@ -40,31 +41,40 @@ func extractURLFromFile(p string, t []Tag) URLList {
 	return urlOut
 }
 
-func getOutLinkURL(rp string, t []Tag) {
-	pathTraverse(rp, func(curpath string) {
-		curURL := splitRootURL(curpath, rp)
-		fmt.Println("CURPATH => ", curURL)
-		urlOut := extractURLFromFile(curpath, t)
-		for i, u := range urlOut {
-			uParse, err := url.Parse(u)
+func getOutLinkURL(htmlPath string, url string, tag []Tag) URLList {
+	contentPath := path.Join(htmlPath, url)
+	log.Println("Reading...", contentPath)
 
-			if err != nil {
-				panic(err)
-			}
-
-			if uParse.IsAbs() {
-				urlOut[i] = removeHTTPPrefix(u)
-			} else {
-				urlOut[i] = strings.TrimRight(u, "/")
-			}
+	urlOut := extractURLFromFile(contentPath, tag)
+	for i, u := range urlOut {
+		rel, err := pathResolve(u, url)
+		if err == nil {
+			urlOut[i] = rel
 		}
-		urlOut.print()
-		fmt.Println()
-	})
+	}
+	return urlOut
 }
 
-func parseHTML(ct io.Reader, t []Tag) URLList {
-	d := html.NewTokenizer(ct)
+func pathResolve(u string, curPath string) (string, error) {
+	uParse, err := url.Parse(u)
+
+	if err != nil {
+		return "", err
+	}
+
+	if uParse.IsAbs() {
+		return removeHTTPPrefix(u), nil
+	}
+
+	if u != "/" {
+		u = strings.TrimRight(u, "/")
+	}
+
+	return joinURL(curPath, u), nil
+}
+
+func parseHTML(content io.Reader, t []Tag) URLList {
+	d := html.NewTokenizer(content)
 	var urlOut URLList
 
 	for {
@@ -76,7 +86,7 @@ func parseHTML(ct io.Reader, t []Tag) URLList {
 		switch tokenType {
 		case html.StartTagToken:
 			url := extractTagWithAttribute(token, t)
-			if url != "" && !urlOut.include(url) {
+			if url != "" && urlOut.Find(url) == -1 {
 				urlOut = append(urlOut, url)
 			}
 		}
@@ -84,11 +94,11 @@ func parseHTML(ct io.Reader, t []Tag) URLList {
 	return urlOut
 }
 
-func extractRedirectLink(ct io.Reader) URLList {
+func extractRedirectLink(content io.Reader) URLList {
 	pattern := `.*?window\.location\s*=\s*\"([^"]+)\"`
 	re := regexp.MustCompile(pattern)
 
-	scanner := bufio.NewScanner(ct)
+	scanner := bufio.NewScanner(content)
 
 	var urlRedirect URLList
 	for scanner.Scan() {
@@ -100,11 +110,11 @@ func extractRedirectLink(ct io.Reader) URLList {
 	return urlRedirect
 }
 
-func extractTagWithAttribute(tk html.Token, t []Tag) string {
+func extractTagWithAttribute(token html.Token, t []Tag) string {
 	for _, tag := range t {
-		isExpectTag := tk.Data == tag.Name
+		isExpectTag := token.Data == tag.Name
 		if isExpectTag {
-			for _, attr := range tk.Attr {
+			for _, attr := range token.Attr {
 				if attr.Key == tag.Attribute {
 					return attr.Val
 				}
@@ -115,5 +125,27 @@ func extractTagWithAttribute(tk html.Token, t []Tag) string {
 }
 
 // GetGraph -- get webgraph
-func GetGraph(urlMap URLList, t []Tag) {
+func GetGraph(path string, t []Tag) WebGraph {
+	urlMap := Urlmap(path)
+
+	log.Println("Creating Webgraph...")
+	wg := WebGraph{
+		URLmap: urlMap,
+		OutURL: make([][]int, len(urlMap)),
+	}
+
+	for i, um := range wg.URLmap {
+		urlOut := getOutLinkURL(path, um, t)
+
+		for _, uo := range urlOut {
+			idx := wg.URLmap.Find(uo)
+
+			if idx != -1 {
+				wg.OutURL[i] = append(wg.OutURL[i], idx+1)
+			}
+		}
+	}
+	log.Println("Webgraph created")
+
+	return wg
 }
