@@ -20,13 +20,23 @@ func Compute(wg [][]int) []float64 {
 	vecA := calcVectA(wg)
 
 	log.Println("Calculating PageRank...")
+
+	cvg := 0.0
+	cnt := 0
 	for {
 		t++
 		r1 = mulMatrix(vecA, r0)
 		dist := distance(r0, r1)
-		log.Printf("Round %d (err = %.6f)", t, dist)
+		log.Printf("Round %d (err=%.5f)", t, dist)
 
-		if dist < epsilon {
+		ncvg := math.Floor(dist / epsilon)
+		if ncvg == cvg {
+			cnt++
+		} else {
+			cvg = ncvg
+			cnt = 0
+		}
+		if dist < epsilon || cnt == 10 {
 			break
 		}
 		r0 = r1
