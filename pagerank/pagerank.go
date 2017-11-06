@@ -15,6 +15,7 @@ func Compute(wg [][]int) []float64 {
 	log.Println("Initializing PageRank...")
 	r0 := initValue(len(wg), 1)
 	r1 := make([]float64, len(wg))
+	tp := initValue(len(wg), 1-alpha)
 	t := 0
 
 	vecA := calcVectA(wg)
@@ -26,8 +27,10 @@ func Compute(wg [][]int) []float64 {
 	for {
 		t++
 		r1 = mulMatrix(vecA, r0)
+		r1 = sumMatrix(r1, tp)
 		dist := distance(r0, r1)
-		log.Printf("Round %d (err=%.5f)", t, dist)
+		sumr := sumRank(r1)
+		log.Printf("Round %d (err=%.5f, sumR=%.5f)", t, dist, sumr)
 
 		ncvg := math.Floor(dist / epsilon)
 		if ncvg == cvg {
@@ -37,6 +40,9 @@ func Compute(wg [][]int) []float64 {
 			cnt = 0
 		}
 		if dist < epsilon || cnt == 10 {
+			for i := range r1 {
+				r1[i] = r1[i] / sumr
+			}
 			break
 		}
 		r0 = r1
@@ -76,9 +82,14 @@ func calcVectA(wg [][]int) [][]float64 {
 
 	log.Println("Calculating VectorA...")
 	for i, row := range wg {
-		val := 1 / float64(len(row))
+		var val float64
+		if len(row) > 0 {
+			val = alpha / float64(len(row))
+		} else {
+			val = 0
+		}
 		for _, idx := range row {
-			vecA[i][idx-1] = val
+			vecA[i][idx-1] += val
 		}
 	}
 
@@ -113,5 +124,21 @@ func mulMatrix(a [][]float64, b []float64) []float64 {
 		result[i] = sum
 	}
 
+	return result
+}
+
+func sumRank(a []float64) float64 {
+	sum := 0.0
+	for _, t := range a {
+		sum += t
+	}
+	return sum
+}
+
+func sumMatrix(a []float64, b []float64) []float64 {
+	result := make([]float64, len(a))
+	for i := range a {
+		result[i] = a[i] + b[i]
+	}
 	return result
 }
