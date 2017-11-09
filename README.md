@@ -1,8 +1,12 @@
-# WebGraph
+# Web Reranking
+
+Web Reranking by GO lang
 
 ## How to install
 ```
-$ git clone https://github.com/m00p1ng/web-reranking ~/web-reranking
+$ git clone https://github.com/m00p1ng/web-reranking web-reranking
+$ cd web-reranking
+$ go get ./..
 ```
 
 ## How to run
@@ -10,7 +14,7 @@ $ git clone https://github.com/m00p1ng/web-reranking ~/web-reranking
 $ cd web-reranking/webGraph
 $ go run main.go settings.go
 
-or 
+OR 
 
 $ make run
 ```
@@ -20,13 +24,7 @@ $ make run
 $ go bulid -o webgraph.out main.go settings.go 
 $ ./webgraph.out
 
-or 
+OR 
 
 $ make build
-```
-
-## URLMAP
-```
-$ cd web-reranking/webGraph
-$ ./urlmap.sh
 ```
