@@ -22,15 +22,16 @@ func Compute(wg [][]int) []float64 {
 
 	log.Println("Calculating PageRank...")
 
-	cvg := 0.0
-	cnt := 0
+	var cnt int
+	var cvg float64
+
 	for {
 		t++
 		r1 = mulMatrix(vecA, r0)
 		r1 = sumMatrix(r1, tp)
 		dist := distance(r0, r1)
 		sumr := sumRank(r1)
-		log.Printf("Round %d (err=%.5f, sumR=%.5f)", t, dist, sumr)
+		log.Printf("Round %d (err=%.5f, sum_rank=%.5f)", t, dist, sumr)
 
 		ncvg := math.Floor(dist / epsilon)
 		if ncvg == cvg {
@@ -39,10 +40,8 @@ func Compute(wg [][]int) []float64 {
 			cvg = ncvg
 			cnt = 0
 		}
+
 		if dist < epsilon || cnt == 10 {
-			for i := range r1 {
-				r1[i] = r1[i] / sumr
-			}
 			break
 		}
 		r0 = r1
@@ -81,16 +80,24 @@ func calcVectA(wg [][]int) [][]float64 {
 	log.Println("VectorA was Initialized")
 
 	log.Println("Calculating VectorA...")
+
+	totalDoc := len(wg)
 	for i, row := range wg {
 		var val float64
-		if len(row) > 0 {
-			val = alpha / float64(len(row))
+		outLink := len(row)
+
+		if outLink > 0 {
+			val = alpha / float64(outLink)
+			for _, j := range row {
+				vecA[i][j-1] += val
+			}
 		} else {
-			val = 0
+			val = alpha / float64(totalDoc)
+			for j := 0; j < totalDoc; j++ {
+				vecA[i][j] = val
+			}
 		}
-		for _, idx := range row {
-			vecA[i][idx-1] += val
-		}
+
 	}
 
 	vecA = transposeMatrix(vecA)
