@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
+    "os"
+    "path/filepath"
 
-	"./webgraph"
+    "./webgraph"
 )
 
 var htmlPath = filepath.Join(os.Getenv("HOME"), "Documents", "ir_proj", "html")
 
 var tags = []webgraph.Tag{
-	webgraph.Tag{Name: "a", Attribute: "href"},
+    webgraph.Tag{Name: "a", Attribute: "href"},
 }
