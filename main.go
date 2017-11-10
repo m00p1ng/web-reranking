@@ -17,7 +17,7 @@ func main() {
 
 	writeFile("urlmap.txt", func(file io.Writer) {
 		for _, url := range urlmap {
-			fmt.Fprintf(file, "%s\n", url)
+            fmt.Fprintf(file, "http://%s\n", url)
 		}
 	})
 
